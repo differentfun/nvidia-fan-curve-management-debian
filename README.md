@@ -23,6 +23,35 @@ flatpak run com.leinardi.gwe
 ```
 Configure your desired fan curve in GWE and enable automatic profile loading if you want it at login.
 
+## Wayland hosts
+
+Nvidia exposes the NV-CONTROL extension only to Xorg, so GWE cannot talk to the driver when you log into a Wayland session. The helper `nvidia_wayland_fan_daemon.sh` shipped in this repo starts a minimal headless Xorg instance and enforces a fan curve through `nvidia-settings`, letting you stay on Wayland:
+
+```bash
+sudo ./nvidia_wayland_fan_daemon.sh \
+    --curve "35:25,50:45,65:65,75:80,82:100"
+```
+
+The curve is defined as comma-separated `temperature:speed` pairs (speed is a percentage). The daemon polls the GPU temperature via `nvidia-smi` and keeps the fan in manual mode until it exits, restoring automatic control after shutdown.
+
+To run it automatically at boot you can create `/etc/systemd/system/nvidia-wayland-fan.service`:
+
+```ini
+[Unit]
+Description=Wayland Nvidia fan control
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/nvidia_wayland_fan_daemon.sh --curve "35:25,50:45,65:65,75:80,82:100"
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Copy the script to `/usr/local/bin`, make it executable, then enable the service with `sudo systemctl enable --now nvidia-wayland-fan.service`.
+
 ## Script options
 - `--coolbits <value>`: override the CoolBits mask (defaults to `12`, which unlocks fan and overclock controls).
 - `--skip-gwe`: configure CoolBits only, skip Flatpak/GWE installation.
