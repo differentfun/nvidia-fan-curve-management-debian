@@ -15,7 +15,11 @@ This repository provides a helper script for Debian systems with Nvidia GPUs. It
 
 ## Usage
 ```bash
-sudo ./setup_nvidia_fan_control.sh
+sudo ./setup_nvidia_fan_control_X11.sh
+```
+For a turnkey setup that also deploys the Wayland shim and systemd service:
+```bash
+sudo ./setup_nvidia_fan_control_Wayland_And_X11.sh
 ```
 After the script completes, restart your display manager or reboot so the CoolBits change is picked up. Launch GreenWithEnvy from your desktop menu or run:
 ```bash
@@ -32,25 +36,9 @@ sudo ./nvidia_wayland_fan_daemon.sh \
     --curve "35:25,50:45,65:65,75:80,82:100"
 ```
 
+`setup_nvidia_fan_control_Wayland_And_X11.sh` copies the daemon under `/usr/local/bin`, writes a `nvidia-wayland-fan.service` unit, and enables it automatically if you prefer not to manage those steps manually.
+
 The curve is defined as comma-separated `temperature:speed` pairs (speed is a percentage). The daemon polls the GPU temperature via `nvidia-smi` and keeps the fan in manual mode until it exits, restoring automatic control after shutdown.
-
-To run it automatically at boot you can create `/etc/systemd/system/nvidia-wayland-fan.service`:
-
-```ini
-[Unit]
-Description=Wayland Nvidia fan control
-After=multi-user.target
-
-[Service]
-Type=simple
-ExecStart=/usr/local/bin/nvidia_wayland_fan_daemon.sh --curve "35:25,50:45,65:65,75:80,82:100"
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Copy the script to `/usr/local/bin`, make it executable, then enable the service with `sudo systemctl enable --now nvidia-wayland-fan.service`.
 
 ## Script options
 - `--coolbits <value>`: override the CoolBits mask (defaults to `12`, which unlocks fan and overclock controls).
